@@ -26,15 +26,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define NODE2
-#ifdef NODE1
 #define TX_ID 0x012
 #define RX_ID 0x0A2
-#endif
-#ifdef NODE2
-#define TX_ID 0x0A2
-#define RX_ID 0x012
-#endif
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -53,6 +46,8 @@ CAN_HandleTypeDef hcan;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+uint8_t data[8];
+
 uint8_t calc_SAE_J1850(uint8_t data[],uint8_t crc_len)
 {
 	uint8_t idx, crc, temp1, temp2, idy;
@@ -151,7 +146,6 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   CAN_Init();
-  uint8_t data[8] = {7};
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -159,7 +153,7 @@ int main(void)
   while (1)
   {
   	CAN_Transmit(data, 8);
-	  HAL_Delay(100);
+  	HAL_Delay(700);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -308,9 +302,13 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-	uint8_t RcvBuf[8];
 	CAN_RxHeaderTypeDef RxHeader;
-	HAL_CAN_GetRxMessage(hcan, CAN_FILTER_FIFO0, &RxHeader, RcvBuf);
+	HAL_CAN_GetRxMessage(hcan, CAN_FILTER_FIFO0, &RxHeader, data);
+	HAL_GPIO_TogglePin(LEDR_GPIO_Port, LEDR_Pin);
+
+	data[2] = data[0] + data[1];
+	data[7] = calc_SAE_J1850(data, 7);
+	//HAL_UART_Transmit(&huart1, (uint8_t*)"receive", 7, 100);
 }
 /* USER CODE END 4 */
 
